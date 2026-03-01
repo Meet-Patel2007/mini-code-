@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeLens — AI Code Error Analyzer</title>
+    <meta name="description"
+        content="Paste any code and get instant AI-powered error detection, plain-English explanations, and smart solutions." />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+</head>
+
+<body>
+
+    <!-- API Key Modal -->
+    <div id="api-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-icon">🔑</div>
+            <h2>Enter Your Gemini API Key</h2>
+            <p>CodeLens uses Google Gemini AI to analyze your code. Your key is stored only in your browser.</p>
+            <p class="modal-hint">Get a free key at <a href="https://aistudio.google.com"
+                    target="_blank">aistudio.google.com</a></p>
+            <input type="password" id="api-key-input" placeholder="AIza..." autocomplete="off" />
+            <button id="save-key-btn" onclick="saveApiKey()">Save & Continue →</button>
+            <p id="api-key-error" class="error-msg hidden">Please enter a valid API key.</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">⟨/⟩</span>
+                <span class="logo-text">Code<span class="accent">Lens</span></span>
+            </div>
+            <div class="header-actions">
+                <button class="btn-ghost" id="change-key-btn" onclick="promptApiKey()" title="Change API Key">🔑 API
+                    Key</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-glow"></div>
+        <h1 class="hero-title">Find Bugs. <span class="accent-gradient">Understand Code.</span></h1>
+        <p class="hero-sub">Paste any code. Our AI spots the errors, explains them in plain English, and tells you
+            exactly how to fix them.</p>
+    </section>
+
+    <!-- Main Editor Area -->
+    <main class="main-container">
+
+        <!-- Controls -->
+        <div class="controls-bar">
+            <div class="language-select-wrap">
+                <label for="lang-select">Language</label>
+                <select id="lang-select">
+                    <option value="Python">🐍 Python</option>
+                    <option value="JavaScript">🟨 JavaScript</option>
+                    <option value="C++">⚙️ C++</option>
+                    <option value="Java">☕ Java</option>
+                    <option value="C">🔵 C</option>
+                    <option value="TypeScript">💙 TypeScript</option>
+                    <option value="Go">🐹 Go</option>
+                    <option value="Rust">🦀 Rust</option>
+                    <option value="PHP">🐘 PHP</option>
+                    <option value="Ruby">💎 Ruby</option>
+                </select>
+            </div>
+            <button id="analyze-btn" onclick="analyzeCode()">
+                <span class="btn-icon">⚡</span>
+                <span id="btn-text">Analyze Code</span>
+            </button>
+        </div>
+
+        <!-- Editor Panel -->
+        <div class="editor-panel">
+            <div class="editor-header">
+                <span class="editor-title">Code Editor</span>
+                <button class="btn-ghost-sm" onclick="clearEditor()" title="Clear">✕ Clear</button>
+            </div>
+            <div class="editor-wrapper" id="editor-wrapper">
+                <div class="line-numbers" id="line-numbers">1</div>
+                <textarea id="code-editor" class="code-editor" spellcheck="false" autocorrect="off" autocapitalize="off"
+                    placeholder="# Paste your code here...&#10;&#10;def hello(name)&#10;    print('Hello, ' + name)&#10;&#10;hello('World')"
+                    oninput="handleInput()" onscroll="syncScroll()" onkeydown="handleTab(event)"></textarea>
+                <!-- Error highlight overlay -->
+                <div class="error-overlay" id="error-overlay"></div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-section" class="loading-section hidden">
+            <div class="loader-ring"></div>
+            <p>Analyzing your code with Gemini AI…</p>
+        </div>
+
+        <!-- Results Area -->
+        <div id="results-section" class="results-section hidden">
+
+            <!-- ERROR RESULTS -->
+            <div id="error-results" class="hidden">
+                <div class="result-banner error-banner">
+                    <span class="banner-icon">🔴</span>
+                    <div>
+                        <strong id="error-count-label">Errors found</strong>
+                        <p>Check below for details and fixes</p>
+                    </div>
+                </div>
+
+                <div id="errors-list" class="errors-list"></div>
+            </div>
+
+            <!-- SUCCESS RESULTS -->
+            <div id="success-results" class="hidden">
+                <div class="result-banner success-banner">
+                    <span class="banner-icon">✅</span>
+                    <div>
+                        <strong>No errors found!</strong>
+                        <p>Your code looks good. Test it with inputs below.</p>
+                    </div>
+                </div>
+
+                <div class="code-explanation-card" id="logic-explanation-card">
+                    <div class="card-header">
+                        <span class="card-icon">🧠</span>
+                        <h3>What does this code do?</h3>
+                    </div>
+                    <p id="logic-explanation-text" class="explanation-body"></p>
+                </div>
+
+                <!-- I/O Boxes -->
+                <div class="io-section">
+                    <div class="io-box">
+                        <label class="io-label" for="input-box">
+                            <span class="io-icon">📥</span> Input
+                            <span class="io-hint">(stdin / function args)</span>
+                        </label>
+                        <textarea id="input-box" class="io-textarea"
+                            placeholder="Enter input values here..."></textarea>
+                    </div>
+                    <div class="io-arrow">→</div>
+                    <div class="io-box">
+                        <label class="io-label" for="output-box">
+                            <span class="io-icon">📤</span> Expected Output
+                            <span class="io-hint">(described by AI)</span>
+                        </label>
+                        <textarea id="output-box" class="io-textarea" placeholder="Expected output will appear here..."
+                            readonly></textarea>
+                    </div>
+                </div>
+                <button class="run-btn" onclick="runPredict()">
+                    <span>▶ Predict Output</span>
+                </button>
+                <div id="run-loading" class="run-loading hidden">
+                    <div class="loader-ring small"></div>
+                    <span>Getting output prediction…</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <p>Powered by Google Gemini AI &nbsp;·&nbsp; Built with ❤️ for developers</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
