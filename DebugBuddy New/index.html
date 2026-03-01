@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DebugBuddy Pro — The Ultimate AI-Powered Code Debugger & Execution Engine">
+    <title>DebugBuddy Pro — Elite Code Analysis & Runner</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- CodeMirror 5 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+
+<body>
+    <div class="bg-glow bg-glow--1"></div>
+    <div class="bg-glow bg-glow--2"></div>
+    <div class="bg-glow bg-glow--3"></div>
+
+    <nav class="navbar" id="header"
+        style="position:sticky; top:0; z-index:100; background:rgba(10,10,15,0.8); backdrop-filter:blur(24px); border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div
+            style="max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:12px 24px; width:100%;">
+            <a href="#"
+                style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e4e4f0; font-weight:800; font-size:1.15rem;">
+                <span style="font-size:1.3rem;">✨</span>
+                DebugBuddy Pro
+            </a>
+        </div>
+    </nav>
+
+    <section class="toolbar" id="toolbar">
+        <div class="toolbar__left">
+            <div class="select-wrapper" id="language-select-wrapper">
+                <label for="language-select" class="sr-only">Language</label>
+                <select id="language-select" class="select">
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="java">Java</option>
+                    <option value="clike">C / C++</option>
+                </select>
+            </div>
+            <button class="btn btn--ghost" id="btn-clear" title="Clear editor">Clear</button>
+            <button class="btn btn--ghost" id="btn-sample" title="Load sample code">Sample</button>
+        </div>
+        <div class="toolbar__right">
+            <button class="btn btn--primary" id="btn-analyze" title="Analyze code for errors">Analyze Code</button>
+            <div class="run-btn-wrapper" id="run-btn-wrapper">
+                <button class="btn btn--run" id="btn-run" title="Execute Code on Server">Run Code ▶</button>
+            </div>
+        </div>
+    </section>
+
+    <main class="main" id="main">
+        <!-- Editor Panel -->
+        <section class="panel panel--editor" id="editor-panel">
+            <div class="panel__header">
+                <span class="panel__dot panel__dot--red"></span>
+                <span class="panel__dot panel__dot--yellow"></span>
+                <span class="panel__dot panel__dot--green"></span>
+                <span class="panel__title">Code Editor</span>
+            </div>
+            <div class="panel__body" id="editor-container">
+                <textarea id="code-input"></textarea>
+            </div>
+        </section>
+
+        <!-- Right Column (Results + I/O) -->
+        <div class="right-column">
+            <!-- Results Panel -->
+            <section class="panel panel--results" id="results-panel">
+                <div class="panel__header">
+                    <span class="panel__dot" style="background:var(--clr-text-dim)"></span>
+                    <span class="panel__title">Analysis Results</span>
+                    <span class="badge" id="error-count" style="display:none;">0</span>
+                </div>
+                <div class="panel__body results-body" id="results-container">
+                    <div class="empty-state" id="empty-state">
+                        <h2 class="empty-state__title">Ready to debug!</h2>
+                        <p class="empty-state__text">Paste your code on the left, choose a language, and hit
+                            <strong>Analyze Code</strong>.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Request I/O Panel (hidden initially) -->
+            <section class="panel panel--io" id="io-panel" style="display:none;">
+                <div class="panel__header">
+                    <span class="panel__dot" style="background:var(--clr-info)"></span>
+                    <span class="panel__title">Execution I/O</span>
+                </div>
+                <div class="panel__body">
+                    <div class="io-container">
+                        <div class="io-section" style="flex:0.5;">
+                            <span class="io-label">Standard Input (stdin)</span>
+                            <textarea class="io-input" id="io-stdin"
+                                placeholder="Enter input here (if your program asks for it)..."></textarea>
+                        </div>
+                        <div class="io-section">
+                            <div class="io-label">
+                                <span>Output <span id="run-time" style="font-weight:400"></span></span>
+                                <button class="btn btn--copy" id="btn-copy-output" title="Copy output to clipboard"
+                                    style="padding: 2px 8px; font-size: 0.7rem;">Copy</button>
+                            </div>
+                            <div class="io-output" id="io-stdout">Output will appear here upon execution.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer" id="footer">
+        <p>Built with 💜 by DebugBuddy Elite · Execution runs on Secure local Python Server</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/acorn/8.11.3/acorn.min.js"></script>
+    <script src="https://skulpt.org/js/skulpt.min.js"></script>
+    <script src="https://skulpt.org/js/skulpt-stdlib.js"></script>
+
+    <script src="analyzer.js"></script>
+    <script src="runner.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
